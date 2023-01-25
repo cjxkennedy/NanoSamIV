@@ -4,6 +4,8 @@ This is the repository for NanoSAMIV software, including Teensy software, satell
 
 ## Directories
 
-FSW - Development for flight software in Arduino (using arduino.h and SPI.h arduino libraries). \n
-SSW - Development for satelite bus software in Matlab. \n
+FSW - Development for flight software in Arduino (using arduino.h and SPI.h arduino libraries).
+
+SSW - Development for satelite bus software in Matlab.
+
 TSW - Development for Teensy and laptop testing software in Arduino and Matlab. Tests include SPI and USB communication.
