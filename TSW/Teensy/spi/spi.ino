@@ -1,5 +1,6 @@
 /* - - - - - - NanoSAM-IV SPI Testing Script - - - - - - */
 /* GLOBAL VARIABLES */
+#include <SPI.h>
 bool collect = false;       // is NanoSAM in collect mode ?
 int sec = 0;                // how many seconds of collect mode ?
 int maxTime = 30;           // maximum seconds allowed in collect mode
@@ -7,6 +8,7 @@ int maxTime = 30;           // maximum seconds allowed in collect mode
 bool mode1 = false;             // "collection mode"
 /* PINS */
 const int PIN_ADC_CS = 10;          // ADC Chip Select Pin
+const int ADC_MAX_SPEED = 2000000;
 /* SPI and Serial Setup */
 void setup() {
   Serial.begin(9600); // dummy baud rate
@@ -63,10 +65,6 @@ void commandHandling(){
   if(returnMessage==4){
     collect = 0;
     mode1 = 0;
-    mode2 = 0;
-    bool tmp = sunsetCondition;
-    sunsetCondition = sunriseCondition;
-    sunriseCondition = tmp;
     return;
   }
   return;
@@ -84,8 +82,6 @@ uint16_t scienceData(){
 }
 /* Collect, Store, and Send 20 Byte Data Buffer */
 void dataCollection(){
-  // Time Data (ms)
-  uint32_t timeData = millis();
   // Photodiode Data
   uint16_t photodiode16 = scienceData();
   Serial.println(photodiode16, DEC);
