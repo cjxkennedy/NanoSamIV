@@ -1,4 +1,4 @@
-/* - - - - - - NanoSAM-IV SPI Testing Script - - - - - - */
+/* - - - - - - NanoSAM-IV SPI Testing Script 1-30-23  - - - - - - */
 /* GLOBAL VARIABLES */
 #include <SPI.h>
 bool collect = false;       // is NanoSAM in collect mode ?
