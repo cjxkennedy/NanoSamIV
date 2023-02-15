@@ -1,4 +1,4 @@
-/* - - - - - - NanoSAM-IV WIP Testing Script - - - - - - */
+/* - - - - - - NanoSAM-IV Main FSW WIP Script - - - - - - */
 /* Included Libraries */
 #include <SPI.h>
 /* GLOBAL VARIABLES */
@@ -9,10 +9,12 @@ int maxTime = 30;           // maximum seconds allowed in collect mode
 bool mode1 = 0;             // "orbital model mode"
 bool mode2 = 0;             // "manual mode"
 bool mode3 = 0;             // "threshold irradiance mode"
-bool mode4 = 0;             // not implemented yet ! "timed mode"
+bool mode4 = 0;             // not tested yet ! "timed mode"
+short mode4time = 0;        // time input in seconds
+short mode4count = 0;       // count of samples
 /* Irradiance Threshold Parameters */
-uint16_t threshold = (2^16)/4; // dummy value
-uint16_t thresholdCount;       // # samples below threshold
+uint16_t threshold = (2^16)/4;      // dummy value
+uint16_t thresholdCount;            // # samples below threshold
 /* Sun Conditions */
 bool sunsetCondition;
 bool sunriseCondition;
@@ -26,24 +28,30 @@ const int PIN_OPTICS_THERM = 16;    // optics bench thermistor pin
 const int ADC_MAX_SPEED = 2000000;
 /* SPI and Serial Setup */
 void setup() {
-  Serial.begin(9600); // dummy baud rate
-  SPI.begin();  // SPI startup
+  Serial.begin(9600);  // dummy baud rate
+  SPI.begin();         // SPI startup
   pinMode(PIN_ADC_CS, OUTPUT); // set ADC chip select pin to output
   sunsetCondition = 1; // initial sun condition
   sunriseCondition = 0;
   Serial.println("Setup Complete");
 }
-/* Get 3 Byte String and Convert CMD to INT */
-int getMessageFromSerial() { // input MUST be a 3 digit string !
+/* Get String and Convert CMD to INT */
+int getMessageFromSerial() {
+  // input MUST be a 3 digit string !
+  // unless command starts with @M4...
   Serial.flush();
   if (!Serial.available()){
     return 0;
   }
   int count = 0;
-  char buf[3]; //buffer size 
-  while(count < 3){
+  int n = 3;
+  char buf[n]; //buffer size 
+  while(count < n){
       if (Serial.available()){
           buf[count++] = Serial.read();
+          if (count==3 & buf[2]==4){
+            n = 6;
+          }
       }
   }
   // Convert string command to int //
@@ -67,10 +75,18 @@ int getMessageFromSerial() { // input MUST be a 3 digit string !
     //Serial.println("Start Command (M3) Inputted");
     return 3;
   }
-  if (buf[1]=='S'){  // valid mode 1/mode 2 stop
+  if (buf[2]=='4'){
+    //Serial.println();
+    //Serial.println("Start Command (M4) Inputted");
+    for (int i = 0; i < 2; i++){
+      mode4time[i] = (short) buf[i+2];
+    }
+    return 4;
+  }
+  if (buf[1]=='S'){  // valid mode 1/2/4 stop
     //Serial.println();
     //Serial.println("Stop Command (S) Inputted");
-    return 4;
+    return 5;
   }
   return 0;
 }
@@ -81,6 +97,8 @@ void commandHandling(){
     collect = 0;
     mode3 = 0;
   }
+  // Mode 4 Collection Stop
+  mode4Check();
   // Check for and Return Serial Command
   int returnMessage = getMessageFromSerial();
   if(returnMessage==0){
@@ -93,11 +111,12 @@ void commandHandling(){
     mode1 = 1;
     return;
   }
-  // End Collection Mode 1/Mode 2
-  if(returnMessage==4){
+  // End Collection Mode 1/Mode 2/Mode 4
+  if(returnMessage==5){
     collect = 0;
     mode1 = 0;
     mode2 = 0;
+    mode4 = 0;
     bool tmp = sunsetCondition;
     sunsetCondition = sunriseCondition;
     sunriseCondition = tmp;
@@ -116,6 +135,25 @@ void commandHandling(){
     collect = 1;
     mode3 = 1;
     return;
+  }
+  // Start Collection Mode 4
+  if(returnMessage==3){
+    sec = 0;    
+    collect = 1;
+    mode4 = 1;
+    return;
+  }
+  return;
+}
+/* Mode 4 Time Check */
+void mode4Check(){
+  if (!mode4)
+    return;
+  mode4count++;
+  if (mode4count/50 >= mode4time){
+    collect = 0;
+    mode4count = 0;
+    mode4time = 0;
   }
   return;
 }
@@ -192,8 +230,8 @@ void dataCollection(){
   buffer[18] = (digitalCurrent >> 8) & 0xFF;
   // Write BUFFER to Serial
   Serial.write(buffer,20);
+  return;
 }
-
 void loop() {
   // Command Handling
   commandHandling();
@@ -207,12 +245,12 @@ void loop() {
     int count = 0;
     // this loop runs for a second !
     while(count < 50){ 
-      dataCollection();      
+      dataCollection();
       count++;
       delay(19);
       delayMicroseconds(880);
     }
     // count of # of "1 second" periods
     sec++;
-  }
+   }
 }
