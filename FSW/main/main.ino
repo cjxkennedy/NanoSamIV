@@ -9,7 +9,7 @@ int maxTime = 30;           // maximum seconds allowed in collect mode
 bool mode1 = 0;             // "orbital model mode"
 bool mode2 = 0;             // "manual mode"
 bool mode3 = 0;             // "threshold irradiance mode"
-bool mode4 = 0;             // not tested yet ! "timed mode"
+bool mode4 = 0;             // somewhat tested
 short mode4time = 0;        // time input in seconds
 short mode4count = 0;       // count of samples
 /* Irradiance Threshold Parameters */
@@ -25,7 +25,7 @@ const int PIN_DREG_CURR = 18;       // digital regulator current pin
 const int PIN_DIGITAL_THERM = 14;   // digital board thermistor pin
 const int PIN_ANALOG_THERM = 15;    // analog board thermistor pin
 const int PIN_OPTICS_THERM = 16;    // optics bench thermistor pin
-const int ADC_MAX_SPEED = 2000000;
+const int ADC_MAX_SPEED = 2000000;  // 2 MHz
 /* SPI and Serial Setup */
 void setup() {
   Serial.begin(9600);  // dummy baud rate
@@ -37,58 +37,36 @@ void setup() {
 }
 /* Get String and Convert CMD to INT */
 int getMessageFromSerial() {
-  // input MUST be a 3 digit string !
-  // unless command starts with @M4...
   Serial.flush();
   if (!Serial.available()){
     return 0;
   }
   int count = 0;
-  int n = 3;
-  char buf[n]; //buffer size 
+  int n = 6;
+  char buf[10]; 
   while(count < n){
-      if (Serial.available()){
-          buf[count++] = Serial.read();
-          if (count==3 & buf[2]==4){
-            n = 6;
-          }
-      }
-  }
-  // Convert string command to int //
-  if (buf[0]!='@') { // vot a valid message
-    //Serial.println();
-    //Serial.println("Not Valid");
-    return 0;
-  }
-  if (buf[2]=='1') { // valid mode 1 start
-    //Serial.println();
-    //Serial.println("Start Command (M1) Inputted");
-    return 1;
-  }
-  if (buf[2]=='2') { // valid mode 2 start
-    //Serial.println();
-    //Serial.println("Start Command (M2) Inputted");    
-    return 2;
-  }
-  if (buf[2]=='3'){ // valid mode 3 start
-    //Serial.println();
-    //Serial.println("Start Command (M3) Inputted");
-    return 3;
-  }
-  if (buf[2]=='4'){
-    //Serial.println();
-    //Serial.println("Start Command (M4) Inputted");
-    for (int i = 0; i < 2; i++){
-      mode4time[i] = (short) buf[i+2];
+    if (Serial.available()){
+      buf[count++] = Serial.read();
     }
+  }
+  buf[count] = '\0';
+  if (buf[2]=='4'){
+    char buffer[4];  // Increase buffer size to 4
+    for (int i = 0; i < 3; i++){
+      buffer[i] = buf[i+3];
+    }
+    buffer[3] = '\0';  // Add null terminator to buffer
+    mode4time = atoi(buffer);
     return 4;
   }
-  if (buf[1]=='S'){  // valid mode 1/2/4 stop
-    //Serial.println();
-    //Serial.println("Stop Command (S) Inputted");
+  else if (buf[1]=='S'){ // Check for "S" command
     return 5;
   }
-  return 0;
+  else if (buf[0]=='@' && buf[2]>='1' && buf[2]<='3'){ // Check for "M1", "M2", "M3" commands
+    return buf[2] - '0';
+  }
+  
+  return 0; // Invalid command
 }
 /* Change Global Variables */
 void commandHandling(){
@@ -137,7 +115,7 @@ void commandHandling(){
     return;
   }
   // Start Collection Mode 4
-  if(returnMessage==3){
+  if(returnMessage==4){
     sec = 0;    
     collect = 1;
     mode4 = 1;
@@ -181,6 +159,7 @@ byte sunsetSunrise(){
 }
 /* 1 Sample SPI Configuration */
 uint16_t scienceData(){
+  return 2^16/3; // temp bypass since testing with no SPI
   // access ADC Pin (SPI)
   uint16_t photodiode16; // 16 bit variable to hold bin number from ADC
   SPI.beginTransaction(SPISettings(ADC_MAX_SPEED, MSBFIRST, SPI_MODE3)); //SPISettings(maxSpeed,dataOrder,dataMode)
@@ -189,7 +168,6 @@ uint16_t scienceData(){
   digitalWrite(PIN_ADC_CS, HIGH);  // set Slave Select pin to high to de-select chip
   SPI.endTransaction();
   return photodiode16;
-
 }
 /* Collect, Store, and Send 20 Byte Data Buffer */
 void dataCollection(){
@@ -239,7 +217,7 @@ void loop() {
   if(!collect){
     delay(100);
   }
-  // Data Collection Mode 1,2,3
+  // Data Collection Mode 1,2,3,4?
   // Check for Max Time
   if(collect & (sec < maxTime)){
     int count = 0;
