@@ -13,8 +13,8 @@ clc; clear; close all;
 fileOut = 'NS4Data_02_19_23_ParseFirstTest.mat';
 
 % Load data:
-load('TestData.mat');
-rawData = dataASCII;
+load('data.mat');
+rawData = dataUseful;
 timeSteps = height(rawData);
 
 % Data types:
@@ -52,7 +52,7 @@ endCol = 20;
 
 % Parse!
 for i = 1:timeSteps
-    timeOut(i) = NSparse(rawData(i, :), timeCol);
+    timeOut(i) = NSparse(rawData(i, :), flip(timeCol));
     pdOut(i) = NSparse(rawData(i, :), pdCol);
     thresholdOut(i) = NSparse(rawData(i, :), thresholdCol);
     sunOut(i) = NSparse(rawData(i, :), sunCol);
@@ -62,6 +62,7 @@ for i = 1:timeSteps
     analogCurrentOut(i) = NSparse(rawData(i, :), analogCurrentCol);
     digitalCurrentOut(i) = NSparse(rawData(i, :), digitalThermCol);
 end
+timeOut = timeOut - timeOut(1);
 
 % Save data
 save(fileOut, 'timeOut', 'pdOut', 'thresholdOut', 'sunOut', 'pdThermOut', 'analogThermOut', ...
