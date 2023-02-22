@@ -1,4 +1,4 @@
-/* - - - - - - NanoSAM-IV SPI Testing Script 1-30-23  - - - - - - */
+/* - - - - - - NanoSAM-IV SPI Timing Testing Script 2-14-23  - - - - - - */
 /* GLOBAL VARIABLES */
 #include <SPI.h>
 bool collect = false;       // is NanoSAM in collect mode ?
@@ -84,29 +84,38 @@ uint16_t scienceData(){
 void dataCollection(){
   // Photodiode Data
   uint16_t photodiode16 = scienceData();
-  Serial.println(photodiode16, DEC);
+  Serial.print(photodiode16, DEC);
 }
-
 void loop() {
   // Command Handling
   commandHandling();
-  if (collect){
-    dataCollection();
-  }
-  delay(999);
-  /* 50 Hz Test
   if(!collect){
     delay(100);
   }
+  int count = 0;
+  int numIterations = 100000;
+  uint32_t timerStart = millis();
+  while(collect & (count < numIterations)){
+    dataCollection(); 
+    count++;
+  }
+  uint32_t timerStop = millis();
+  uint32_t time = timerStop-timerStart;
+  Serial.println();
+  Serial.println(time);
+  while(true);
+  /*
   // Collect Data
   if(collect & (sec < maxTime)){
     int count = 0;
     while(count < 50){ // this loop runs for a second !
       dataCollection();      
       count++;
-      delay(19);
-      delayMicroseconds(880);
+      delay(20);
+      //delayMicroseconds(880);
     }
+    Serial.println();
     sec++; // count of number of "1 second" periods 
-  } */
+  } 
+  */
 }
