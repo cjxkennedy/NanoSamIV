@@ -1,7 +1,25 @@
 /* - - - - - - NanoSAM-IV Main FSW Script - - - - - - */
+// Author: CJ Kennedy 
+// Hardware: Teensy 4.0
+
+// NanoSam-IV operates in four different modes of operation
+//
+// Mode 1: Orbital Simulation Start/Stop Control
+// Mode 2: Manual Start/Stop Control
+// Mode 3: Below Irradiance Threshold Stop
+// Mode 4: Timed Collection Period
+
+// Inputs to Teensy are command strings for all modes:
+// To start: @M1, @M2, @M3, @M4, and @SS to stop collection
+
+// Outputs from Teensy are sent as a buffer of bytes (binary)
+// This is 20 bytes at 50 Hz and is controlled by delay() in loop()
+
+
 /* Included Libraries */
 #include <SPI.h>
-#include <C:\Users\tomat\OneDrive\Desktop\FSW\main\NANOSAM4.h>
+#include "NANOSAM4.h"
+
 /* SPI and Serial Setup */
 void setup() {
   Serial.begin(9600);  // dummy baud rate
