@@ -1,4 +1,5 @@
-#include <C:\Users\tomat\OneDrive\Desktop\FSW\main\NANOSAM4.h>
+#include "NANOSAM4.h"
+#include "SPI.h"
 // GLOBAL VARIABLES
 bool collect = false;                   // is NanoSAM in collect mode ?
 int sec = 0;                            // how many seconds of collect mode true ?
@@ -10,11 +11,14 @@ bool mode2 = false;                     // "manual mode"
 bool mode3 = false;                     // "threshold irradiance mode"
 bool mode4 = false;                     // somewhat tested
 short mode4time = 0;                    // time input in seconds
-short mode4count = 0;                   // count of samples
 
 // Irradiance Threshold Parameters
 uint16_t threshold = (2^16)/4;          // dummy value
 uint16_t thresholdCount = 0;            // # samples below threshold
+
+// Sun Condition
+bool sunsetCondition = false;
+bool sunriseCondition = false;
 
 // PINS
 const int PIN_ADC_CS = 10;              // ADC Chip Select Pin
@@ -117,8 +121,7 @@ void commandHandling(){
 void mode4Check(){
   if (!mode4)
     return;
-  mode4count++;
-  if (mode4count/50 >= mode4time){
+  if (sec >= mode4time){
     collect = 0;
     mode4 = 0;
     mode4count = 0;
@@ -130,7 +133,7 @@ void mode4Check(){
 void mode3Check(){
   if (!mode3)
     return;
-  if(thresholdCount >= 100)){
+  if(thresholdCount >= 100){
     collect = 0;
     mode3 = 0;
   }
@@ -180,7 +183,7 @@ void dataCollection(){
   buffer[3] = (timeData >> 16) & 0xFF;
   buffer[4] = ((timeData >> 24) & 0xFF);
   // Photodiode Data
-  uint16_t photodiode16 = scienceData();
+  uint16_t photodiode16 = scienceData(); // 52428 = 1 V
   buffer[5] = (photodiode16 & 0xFF);
   buffer[6] = (photodiode16 >> 8) & 0xFF;
   // Threshold Flag
