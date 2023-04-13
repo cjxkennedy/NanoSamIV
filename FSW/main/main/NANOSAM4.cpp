@@ -13,7 +13,7 @@ bool mode4 = false;                     // somewhat tested
 short mode4time = 0;                    // time input in seconds
 
 // Irradiance Threshold Parameters
-uint16_t threshold = (2^16)/4;          // dummy value
+uint16_t threshold = 330;          // .0063 volts (dark current)
 uint16_t thresholdCount = 0;            // # samples below threshold
 
 // Sun Condition
@@ -28,7 +28,6 @@ const int PIN_DIGITAL_THERM = 14;       // digital board thermistor pin
 const int PIN_ANALOG_THERM = 15;        // analog board thermistor pin
 const int PIN_OPTICS_THERM = 16;        // optics bench thermistor pin
 const int ADC_MAX_SPEED = 2000000;      // 2 MHz
-
 
 /* Get String and Convert CMD to INT */
 int getMessageFromSerial() {
@@ -124,7 +123,7 @@ void mode4Check(){
   if (sec >= mode4time){
     collect = 0;
     mode4 = 0;
-    mode4count = 0;
+    //mode4count = 0;
     mode4time = 0;
   }
   return;
@@ -141,14 +140,14 @@ void mode3Check(){
 /* Compare to BIN Threshold Value */
 byte thresholdCheck(uint16_t data){
   if (data >= threshold){
-    thresholdCount = 0;     
-    return 97; // char "g"
+    thresholdCount = 0; // reset "below threshold" flag
+    return 97; // "above threshold" flag
   }
   if (data < threshold){
-    thresholdCount++; 
-    return 108; // char "l"
+    thresholdCount++; // increase "below threshold" count
+    return 89; // "below threshold" flag
   }
-  return 0;
+  return 0; 
 }
 /* Check Sun Condition Global Variables */
 byte sunsetSunrise(){
@@ -184,6 +183,7 @@ void dataCollection(){
   buffer[4] = ((timeData >> 24) & 0xFF);
   // Photodiode Data
   uint16_t photodiode16 = scienceData(); // 52428 = 1 V
+  //Serial.println(photodiode16*1.25/(pow(2,16)));
   buffer[5] = (photodiode16 & 0xFF);
   buffer[6] = (photodiode16 >> 8) & 0xFF;
   // Threshold Flag
