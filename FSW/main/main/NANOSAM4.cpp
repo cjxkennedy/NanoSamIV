@@ -13,7 +13,7 @@ bool mode4 = false;                     // somewhat tested
 short mode4time = 0;                    // time input in seconds
 
 // Irradiance Threshold Parameters
-uint16_t threshold = 330;          // .0063 volts (dark current)
+uint16_t threshold = 330;               // .0063 volts (dark current)
 uint16_t thresholdCount = 0;            // # samples below threshold
 
 // Sun Condition
@@ -123,7 +123,6 @@ void mode4Check(){
   if (sec >= mode4time){
     collect = 0;
     mode4 = 0;
-    //mode4count = 0;
     mode4time = 0;
   }
   return;
