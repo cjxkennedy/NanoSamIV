@@ -43,7 +43,7 @@ void loop() {
     while(count < 50){ 
       dataCollection();
       count++;
-      delay(19);
+      delay(19);// delay for ~20 Hz
       delayMicroseconds(880);
     }
     // count of # of "1 second" periods
